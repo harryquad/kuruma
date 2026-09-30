@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>車検費用 計算ツール【2026年】｜重量税・自賠責・印紙代の法定費用と総額の目安</title>
+<meta name="description" content="車両重量・初度登録・車検を受ける場所を選ぶだけで、車検の法定費用（重量税・自賠責保険・印紙代）と総額の目安を計算。2026年11月からの自賠責保険料の値上げ、13年・18年の重量税の増額にも対応した無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kuruma/shaken/">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/kuruma/">車のお金 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>車検費用 計算ツール（2026年）</h1>
+  <p class="lead">車検の費用は、どこで受けても同じ<strong>法定費用</strong>（重量税・自賠責保険・印紙代）と、お店によって違う<strong>整備費用・手数料</strong>に分かれます。法定費用を正確に計算し、総額の目安を出します。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="kind">車の種類</label>
+        <select id="kind"><option value="normal">普通車・小型車</option><option value="kei">軽自動車</option></select></div>
+      <div class="field" id="weightField"><label for="weight">車両重量（kg）</label><input type="number" id="weight" min="0" value="1300">
+        <div class="hint">車検証の「車両重量」</div></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="reg">初度登録（軽は初度検査）年月</label><input type="month" id="reg" value="2018-05"></div>
+      <div class="field"><label for="date">車検を受ける月</label><input type="month" id="date"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="eco">重量税のエコカー減税</label>
+        <select id="eco"><option value="no">対象外（多くの車）</option><option value="yes">対象（本則税率）</option></select>
+        <div class="hint">車検証や、前回の車検の明細で確認できます</div></div>
+      <div class="field"><label for="shop">車検を受ける場所</label>
+        <select id="shop">
+          <option value="dealer">ディーラー</option>
+          <option value="chain">車検専門店・カー用品店・ガソリンスタンド</option>
+          <option value="user">ユーザー車検（自分で運輸支局に持ち込む）</option>
+        </select></div>
+    </div>
+    <div class="field"><label for="work">整備費用・手数料</label><input type="number" id="work" min="0">
+      <div class="hint">円単位。見積もりがあれば入力。空欄なら場所に応じた目安で計算します</div></div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>車検費用のよくある質問</h2>
+    <h3>法定費用とは？</h3>
+    <p>どこで車検を受けても必ずかかる費用で、自動車重量税・自賠責保険料・検査手数料（印紙代）の3つです。お店によって金額が違うのは、点検・整備の費用と代行手数料の部分です。</p>
+    <h3>13年を超えると車検は高くなる？</h3>
+    <p>新規登録から13年を超えると重量税が上がり、18年を超えるとさらに上がります。たとえば車両重量1.3tの普通車では、2年分の重量税が24,600円から34,200円（13年超）、37,800円（18年超）になります。</p>
+    <h3>自賠責保険は値上げされる？</h3>
+    <p>2026年11月1日以降に始まる契約から、自家用乗用車の24か月契約は17,650円から18,560円に、軽自動車は17,540円から18,660円に値上げされます。車検のときは25か月契約にすることが多く、その場合は24か月より少し高くなります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>重量税は自家用乗用車の継続検査（2年）の税額、自賠責保険料は損害保険料率算出機構の基準料率（24か月契約、離島以外）で計算しています。整備費用の目安は一般的な相場で、車の状態によって大きく変わります。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+const t = new Date();
+$("date").value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}`;
+$("kind").addEventListener("change", () => { $("weightField").hidden = $("kind").value === "kei"; });
+const WORK = { dealer: [60000, "ディーラーの整備費用・手数料の目安（4〜10万円程度）"], chain: [30000, "車検専門店などの整備費用・手数料の目安（2〜5万円程度）"], user: [0, "ユーザー車検は整備費用・手数料なし（必要な整備は自分で）"] };
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const [ry, rm] = ($("reg").value || "").split("-").map(Number);
+  const [dy, dm] = ($("date").value || "").split("-").map(Number);
+  if (!ry || !dy) { out.innerHTML = '<p class="err">初度登録年月と車検を受ける月を入力してください。</p>'; return; }
+  const kind = $("kind").value, shop = $("shop").value;
+  const age = (dy - ry) + (dm >= rm ? 0 : -1); // 車検時点での経過年数
+  const wt = weightTax2y(kind, num("weight"), age, $("eco").value === "yes");
+  const jb = jibaiseki24(kind, new Date(dy, dm - 1, 1));
+  const fee = inspectionFee(kind, shop);
+  const legal = wt + jb + fee;
+  const workIn = $("work").value !== "";
+  const work = workIn ? num("work") : WORK[shop][0];
+  const total = legal + work;
+  const next13 = ry + 13;
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat warn"><div class="k">車検費用の総額（目安）</div><div class="v">${yen(total)}</div></div>
+      <div class="stat"><div class="k">法定費用</div><div class="v">${yen(legal)}</div></div>
+      <div class="stat"><div class="k">整備費用・手数料</div><div class="v">${yen(work)}</div></div>
+    </div>
+    <table class="info">
+      <tr><td>自動車重量税（2年分）${age >= 18 ? "・18年超" : age >= 13 ? "・13年超" : ""}</td><td class="num">${yen(wt)}</td></tr>
+      <tr><td>自賠責保険料（24か月）${new Date(dy, dm - 1, 1) >= new Date(2026, 10, 1) ? "・2026年11月改定後" : ""}</td><td class="num">${yen(jb)}</td></tr>
+      <tr><td>検査手数料（印紙代など）</td><td class="num">${yen(fee)}</td></tr>
+      <tr><td><strong>法定費用の合計</strong></td><td class="num"><strong>${yen(legal)}</strong></td></tr>
+      <tr><td>${workIn ? "整備費用・手数料（入力値）" : WORK[shop][1]}</td><td class="num">${yen(work)}</td></tr>
+    </table>
+    ${age < 13 && kind === "normal" && $("eco").value === "no" ? `<p class="note">${next13}年ごろ（13年超）から重量税が上がります。車検のたびに費用が増えていくので、乗り換えるならその前の車検のタイミングが目安です。</p>` : ""}
+    ${age >= 13 ? `<p class="note">年数がたった車は、車検のたびに整備費用もかさみがちです。車検を通すか、売って乗り換えるかを比べてみましょう → <a href="/kuruma/norikae/">乗り換え 損得 計算</a></p>` : ""}`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

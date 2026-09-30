@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>カーリース vs 購入 比較シミュレーション｜現金・ローン・カーリースの総額はどれが安い？</title>
+<meta name="description" content="車の価格・乗る年数・リースの月額・ローン金利を入れるだけで、カーリース・現金一括購入・ローン購入の総額と月あたりの負担を比較。税金や車検がリース料金に含まれるかの違い、最後に車を売った金額も反映する無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kuruma/lease/">
+<link rel="stylesheet" href="../assets/style.css">
+<style>tr.best td{background:var(--good-soft);font-weight:700}</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/kuruma/">車のお金 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>カーリース vs 購入 比較シミュレーション</h1>
+  <p class="lead">同じ車に同じ年数乗る場合、<strong>カーリース</strong>・<strong>現金で購入</strong>・<strong>ローンで購入</strong>のどれがいちばん安いかを比べます。購入した場合は、最後に車を売った金額も差し引いて計算します。</p>
+
+  <div class="card">
+    <h2>車と期間</h2>
+    <div class="row">
+      <div class="field"><label for="price">車の価格（諸費用込み）</label><input type="number" id="price" min="0" value="250">
+        <div class="hint">万円単位</div></div>
+      <div class="field"><label for="years">乗る年数</label><input type="number" id="years" min="1" max="11" value="7"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="resale">乗り終わったときに売れる金額（購入の場合）</label><input type="number" id="resale" min="0" value="70">
+        <div class="hint">万円単位。車種・年数・走行距離で大きく変わります</div></div>
+      <div class="field"><label for="upkeep">税金・自賠責・車検・メンテナンス（年額）</label><input type="number" id="upkeep" min="0" value="10">
+        <div class="hint">万円単位。購入した場合に自分で払う分（任意保険・燃料は除く）</div></div>
+    </div>
+    <h2>カーリース</h2>
+    <div class="row">
+      <div class="field"><label for="leaseM">リースの月額</label><input type="number" id="leaseM" min="0" value="38000">
+        <div class="hint">円単位（ボーナス払いがある場合は年額÷12を足す）</div></div>
+      <div class="field"><label for="leaseIncl">リース料金に含まれるもの</label>
+        <select id="leaseIncl"><option value="all">税金・自賠責・車検・メンテナンスまで含む</option><option value="tax">税金・自賠責・車検の法定費用だけ含む</option><option value="none">何も含まない</option></select></div>
+    </div>
+    <div class="field"><label for="leaseEnd">契約終了時の精算・費用（見込み）</label><input type="number" id="leaseEnd" min="0" value="0">
+      <div class="hint">円単位。残価精算や走行距離の超過、キズの修理費など。車がもらえるプランなら0</div></div>
+    <h2>ローン</h2>
+    <div class="row">
+      <div class="field"><label for="rate">ローン金利（年）</label><input type="number" id="rate" min="0" step="0.1" value="3.9">
+        <div class="hint">%。銀行のマイカーローンは1〜3%台、ディーラーのローンは3〜8%台が目安</div></div>
+      <div class="field"><label for="down">頭金</label><input type="number" id="down" min="0" value="0">
+        <div class="hint">万円単位</div></div>
+    </div>
+    <button id="calc">比較する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>カーリースのよくある質問</h2>
+    <h3>カーリースのメリットは？</h3>
+    <p>頭金なしで新車に乗れて、税金や車検の費用が月額に含まれるプランなら、毎月の支払いが一定になり家計の管理がしやすくなります。まとまったお金を用意せずに新車に乗りたい人に向いています。</p>
+    <h3>カーリースの注意点は？</h3>
+    <p>原則として途中で解約できず、解約すると違約金がかかります。走行距離の上限を超えたり、キズやへこみがあったりすると、契約終了時に追加の費用がかかるプランもあります。契約の内容をよく確認しましょう。</p>
+    <h3>結局どれがいちばん安い？</h3>
+    <p>一般的には、現金で買って長く乗るのがいちばん安くなりやすいです。ただし、手元の現金を残したい場合や、車の価値が下がるリスクを避けたい場合は、カーリースやローンにもメリットがあります。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>入力した金額にもとづく比較です。ローンは元利均等返済、返済期間は乗る年数と同じとして計算しています。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const n = Math.max(1, Math.floor(num("years")));
+  const price = num("price") * MAN, resale = num("resale") * MAN, upkeep = num("upkeep") * MAN;
+  if (!price) { out.innerHTML = '<p class="err">車の価格を入力してください。</p>'; return; }
+  const incl = $("leaseIncl").value;
+  // リースに含まれない分は自分で払う（法定費用は維持費の約6割として計算）
+  const leaseExtra = incl === "all" ? 0 : incl === "tax" ? upkeep * 0.4 : upkeep;
+  const lease = num("leaseM") * 12 * n + num("leaseEnd") + leaseExtra * n;
+  const cash = price + upkeep * n - resale;
+  const down = Math.min(price, num("down") * MAN);
+  const m = monthlyPayment(price - down, num("rate") / 100, n * 12);
+  const interest = m * n * 12 - (price - down);
+  const loan = price + interest + upkeep * n - resale;
+  const rows = [
+    { name: "カーリース", total: lease, note: `月額${yen(num("leaseM"))} × ${n * 12}か月${leaseExtra ? "＋リースに含まれない維持費" : ""}${num("leaseEnd") ? "＋終了時の精算" : ""}` },
+    { name: "現金で購入", total: cash, note: `車の価格＋維持費 − ${n}年後に売った金額` },
+    { name: "ローンで購入", total: loan, note: `毎月${yen(m)}（利息の合計${yen(interest)}）＋維持費 − 売った金額` },
+  ];
+  const best = rows.reduce((a, b) => (b.total < a.total ? b : a));
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat good"><div class="k">いちばん安いのは</div><div class="v">${best.name}</div></div>
+      <div class="stat"><div class="k">${n}年間の実質負担</div><div class="v">${yen(best.total)}</div></div>
+      <div class="stat"><div class="k">月あたり</div><div class="v">${yen(best.total / n / 12)}</div></div>
+    </div>
+    <table class="info">
+      <tr><th>方法</th><th class="num">${n}年間の実質負担</th><th class="num">月あたり</th></tr>
+      ${rows.map(r => `<tr class="${r === best ? "best" : ""}"><td>${r.name}<br><small style="color:var(--muted)">${r.note}</small></td><td class="num">${yen(r.total)}</td><td class="num">${yen(r.total / n / 12)}</td></tr>`).join("")}
+    </table>
+    <p class="note">購入の場合は、最後に車を${yen(resale)}で売れる前提です。売れる金額が下がると、購入の負担はその分増えます。カーリースは、最後に車を売る手間や値下がりの心配がありません。</p>
+    <p class="note">ローンの返済額を詳しく計算するなら → <a href="/kuruma/loan/">カーローン 計算</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ガソリン代 計算ツール｜走行距離と燃費から月・年の燃料代、車同士の比較（ハイブリッドは元が取れる？）</title>
+<meta name="description" content="走行距離（または通勤の距離と日数）と燃費、ガソリン単価を入れるだけで、月・年のガソリン代を計算。2台の車の燃料代を比べて、ハイブリッド車や電気自動車の価格差を何年で取り戻せるかもわかる無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kuruma/gasoline/">
+<link rel="stylesheet" href="../assets/style.css">
+<style>.cols{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media (max-width:520px){.cols{grid-template-columns:1fr}}.cols h3{margin:0 0 8px;font-size:1rem}</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/kuruma/">車のお金 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>ガソリン代 計算ツール</h1>
+  <p class="lead">走行距離と燃費から、<strong>月・年のガソリン代</strong>を計算します。2台の車を比べて、<strong>燃費の良い車に乗り換えると年いくら浮くか</strong>、<strong>車両価格の差を何年で取り戻せるか</strong>もわかります。</p>
+
+  <div class="card">
+    <h2>走る距離</h2>
+    <div class="field">
+      <div class="checks">
+        <label><input type="radio" name="dmode" value="year" checked>年間の走行距離で入力</label>
+        <label><input type="radio" name="dmode" value="commute">通勤の距離と日数で入力</label>
+      </div>
+    </div>
+    <div class="row" id="yearRow">
+      <div class="field"><label for="km">年間の走行距離（km）</label><input type="number" id="km" min="0" value="10000"></div>
+    </div>
+    <div class="row" id="commuteRow" hidden>
+      <div class="field"><label for="oneway">通勤の片道（km）</label><input type="number" id="oneway" min="0" value="15"></div>
+      <div class="field"><label for="days">月の出勤日数</label><input type="number" id="days" min="0" max="31" value="20"></div>
+    </div>
+    <h2>車</h2>
+    <div class="cols">
+      <div><h3>車A（今の車など）</h3>
+        <div class="field"><label for="effA">燃費（km/L、EVはkm/kWh）</label><input type="number" id="effA" min="0" step="0.1" value="12"></div>
+        <div class="field"><label for="priceA">燃料の単価（円/L、EVは円/kWh）</label><input type="number" id="priceA" min="0" value="160"></div>
+      </div>
+      <div><h3>車B（比べたい車・任意）</h3>
+        <div class="field"><label for="effB">燃費</label><input type="number" id="effB" min="0" step="0.1" value="25"></div>
+        <div class="field"><label for="priceB">燃料の単価</label><input type="number" id="priceB" min="0" value="160"></div>
+        <div class="field"><label for="diff">車Bの方が高い車両価格の差額（任意）</label><input type="number" id="diff" min="0" value="400000">
+          <div class="hint">円単位。元が取れる年数を計算します</div></div>
+      </div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>ガソリン代のよくある質問</h2>
+    <h3>カタログ燃費と実際の燃費は違う？</h3>
+    <p>カタログのWLTCモード燃費より、実際の燃費は1〜3割ほど悪くなるのが一般的です。街乗りが多い、短い距離の運転が多い、エアコンをよく使う、といった場合はさらに悪くなります。正確に知りたい場合は、満タン法（給油量と走行距離から計算）で測ってみましょう。</p>
+    <h3>ハイブリッド車は元が取れる？</h3>
+    <p>走る距離が長いほど元が取りやすくなります。年間1万km走る人で、燃費が12km/Lから25km/Lになると、ガソリン代は年6〜7万円ほど下がります（ガソリン160円/Lの場合）。車両価格の差と比べて判断しましょう。</p>
+    <h3>電気自動車の電気代は？</h3>
+    <p>電気自動車の電費は1kWhあたり6〜8kmくらいが目安です。自宅で充電する場合は電気料金の単価（1kWhあたり30円前後）、急速充電を使う場合はその料金で計算します。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>入力した燃費と単価にもとづく計算です。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+document.querySelectorAll("input[name=dmode]").forEach(r => r.addEventListener("change", () => {
+  const c = document.querySelector("input[name=dmode]:checked").value === "commute";
+  $("yearRow").hidden = c; $("commuteRow").hidden = !c;
+}));
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const commute = document.querySelector("input[name=dmode]:checked").value === "commute";
+  const km = commute ? num("oneway") * 2 * num("days") * 12 : num("km");
+  if (!km || !num("effA")) { out.innerHTML = '<p class="err">走行距離と車Aの燃費を入力してください。</p>'; return; }
+  const a = km / num("effA") * num("priceA");
+  const hasB = num("effB") > 0;
+  const b = hasB ? km / num("effB") * num("priceB") : 0;
+  const save = a - b;
+  const payback = hasB && save > 0 && num("diff") ? num("diff") / save : null;
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat warn"><div class="k">車Aのガソリン代（年）</div><div class="v">${yen(a)}</div></div>
+      <div class="stat"><div class="k">月あたり</div><div class="v">${yen(a / 12)}</div></div>
+      <div class="stat"><div class="k">年間の走行距離</div><div class="v">${Math.round(km).toLocaleString("ja-JP")}km</div></div>
+    </div>
+    ${hasB ? `<table class="info">
+      <tr><th></th><th class="num">車A</th><th class="num">車B</th></tr>
+      <tr><td>燃料代（年）</td><td class="num">${yen(a)}</td><td class="num">${yen(b)}</td></tr>
+      <tr><td>燃料代（月）</td><td class="num">${yen(a / 12)}</td><td class="num">${yen(b / 12)}</td></tr>
+      <tr><td>1kmあたり</td><td class="num">${yen(a / km)}</td><td class="num">${yen(b / km)}</td></tr>
+    </table>
+    <p class="note">車Bにすると、燃料代が年<strong>${yen(Math.abs(save))}</strong>${save >= 0 ? "安く" : "高く"}なります。${payback ? `車両価格の差（${yen(num("diff"))}）は、約<strong>${payback.toFixed(1)}年</strong>で取り戻せる計算です。` : ""}</p>` : ""}
+    ${commute ? `<p class="note">通勤距離から計算しています（片道${num("oneway")}km × 往復 × 月${num("days")}日 × 12か月）。休日の運転は含まれていません。</p>` : ""}
+    <p class="note">ガソリン代以外も含めた車の費用は → <a href="/kuruma/">車の維持費 計算</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

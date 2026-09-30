@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>カーローン 計算ツール｜毎月の返済額・利息の総額（残価設定ローン・金利比較）</title>
+<meta name="description" content="借入額・金利・返済回数を入れるだけで、カーローンの毎月の返済額と利息の総額を計算。残価設定ローン（残クレ）にも対応し、ディーラーローンと銀行のマイカーローンの金利の違いでいくら差が出るかも比べられる無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kuruma/loan/">
+<link rel="stylesheet" href="../assets/style.css">
+</head>
+<body>
+<header class="site-header"><div><a href="/kuruma/">車のお金 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>カーローン 計算ツール</h1>
+  <p class="lead">借入額・金利・返済回数から、<strong>毎月の返済額</strong>と<strong>利息の総額</strong>を計算します。<strong>残価設定ローン</strong>にも対応し、金利が違うローンでいくら差が出るかも比べられます。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="amount">借入額</label><input type="number" id="amount" min="0" value="250">
+        <div class="hint">万円単位（車の価格 − 頭金）</div></div>
+      <div class="field"><label for="rate">金利（年）</label><input type="number" id="rate" min="0" step="0.1" value="4.9">
+        <div class="hint">%</div></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="months">返済回数（月）</label><input type="number" id="months" min="1" max="120" value="60"></div>
+      <div class="field"><label for="balloon">残価（最終回の支払い・残価設定ローンの場合）</label><input type="number" id="balloon" min="0" value="0">
+        <div class="hint">万円単位。ふつうのローンなら0</div></div>
+    </div>
+    <div class="field"><label for="rate2">比べたい金利（任意）</label><input type="number" id="rate2" min="0" step="0.1" value="2.0">
+      <div class="hint">%。銀行のマイカーローンなど</div></div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>カーローンのよくある質問</h2>
+    <h3>ディーラーのローンと銀行のローンの違いは？</h3>
+    <p>ディーラーのローンは手続きが簡単ですが、金利は年3〜8%台と高めのことが多いです。銀行や信用金庫のマイカーローンは年1〜3%台と低めですが、審査に少し時間がかかります。借入額が大きいほど、金利の差が利息の差になって表れます。</p>
+    <h3>残価設定ローン（残クレ）とは？</h3>
+    <p>数年後の車の予想価格（残価）を最初に決めて、残りの金額だけを分割で払うローンです。毎月の支払いは少なくなりますが、残価の部分にも利息がかかるため、利息の総額は多くなりがちです。最後は、車を返す・残価を払って買い取る・乗り換える、のどれかを選びます。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>元利均等返済での計算です（ボーナス払い・手数料・保証料は含みません）。実際の返済額は金融機関の計算方法によって数円ずれることがあります。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+// 残価（最終回にまとめて払う額）があるときの毎月の返済額
+function payment(P, rate, n, B) {
+  const r = rate / 12;
+  if (!r) return (P - B) / n;
+  return (P - B / Math.pow(1 + r, n)) * r / (1 - Math.pow(1 + r, -n));
+}
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const P = num("amount") * MAN, n = Math.max(1, Math.floor(num("months"))), B = Math.min(num("balloon") * MAN, P);
+  if (!P) { out.innerHTML = '<p class="err">借入額を入力してください。</p>'; return; }
+  const rate = num("rate") / 100;
+  const m = payment(P, rate, n, B);
+  const interest = m * n + B - P;
+  const rate2 = $("rate2").value === "" ? null : num("rate2") / 100;
+  const m2 = rate2 === null ? 0 : payment(P, rate2, n, B);
+  const interest2 = m2 * n + B - P;
+
+  // 年ごとの残高
+  let bal = P; const years = [];
+  for (let i = 1; i <= n; i++) {
+    bal = bal * (1 + rate / 12) - m;
+    if (i % 12 === 0 || i === n) years.push([Math.ceil(i / 12), Math.max(0, bal)]);
+  }
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat warn"><div class="k">毎月の返済額</div><div class="v">${yen(m)}</div></div>
+      <div class="stat"><div class="k">利息の総額</div><div class="v">${yen(interest)}</div></div>
+      <div class="stat"><div class="k">支払いの総額</div><div class="v">${yen(m * n + B)}</div></div>
+    </div>
+    <table class="info">
+      <tr><td>借入額</td><td class="num">${yen(P)}</td></tr>
+      <tr><td>返済回数</td><td class="num">${n}回（${(n / 12).toFixed(1)}年）</td></tr>
+      ${B ? `<tr><td>最終回の残価</td><td class="num">${yen(B)}</td></tr>` : ""}
+    </table>
+    ${rate2 !== null ? `<h2 style="margin-top:16px">金利${num("rate2")}%のローンと比べると</h2>
+    <table class="info">
+      <tr><th></th><th class="num">金利${num("rate")}%</th><th class="num">金利${num("rate2")}%</th></tr>
+      <tr><td>毎月の返済額</td><td class="num">${yen(m)}</td><td class="num">${yen(m2)}</td></tr>
+      <tr><td>利息の総額</td><td class="num">${yen(interest)}</td><td class="num">${yen(interest2)}</td></tr>
+    </table>
+    <p class="note">金利の差で、利息の総額が <strong>${yen(Math.abs(interest - interest2))}</strong> 変わります。</p>` : ""}
+    <h2 style="margin-top:16px">年ごとの残高</h2>
+    <table class="info"><tr><th>年</th><th class="num">残高（年末時点）</th></tr>${years.map(([y, b]) => `<tr><td>${y}年目</td><td class="num">${yen(b)}</td></tr>`).join("")}</table>
+    <p class="note">ローン以外の選び方も比べたいなら → <a href="/kuruma/lease/">カーリース vs 購入 比較</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

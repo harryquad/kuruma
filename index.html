@@ -1,0 +1,125 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>車の維持費 計算シミュレーション【2026年】｜年間・月あたりの費用（普通車・軽自動車）</title>
+<meta name="description" content="車種・排気量・年式・走行距離などを入れるだけで、自動車税・重量税・自賠責・任意保険・ガソリン代・車検・駐車場までの年間の維持費と月あたりの費用を計算。2026年11月の自賠責保険料の改定にも対応した無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kuruma/">
+<link rel="stylesheet" href="assets/style.css">
+<style>.bar{display:flex;height:16px;border-radius:99px;overflow:hidden;margin:10px 0 6px}.bar span{display:block;height:100%}</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/kuruma/">車のお金 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>車の維持費 計算シミュレーション（2026年）</h1>
+  <p class="lead">車の種類・年式・乗り方を入れると、<strong>税金・保険・ガソリン代・車検・駐車場</strong>まで含めた<strong>年間の維持費</strong>と<strong>月あたりの費用</strong>を計算します。</p>
+
+  <div class="card">
+    <h2>車について</h2>
+    <div class="row">
+      <div class="field"><label for="kind">車の種類</label>
+        <select id="kind"><option value="normal">普通車・小型車（白ナンバー）</option><option value="kei">軽自動車（黄ナンバー）</option></select></div>
+      <div class="field"><label for="fuel">燃料</label>
+        <select id="fuel"><option value="gas">ガソリン</option><option value="hybrid">ハイブリッド</option><option value="diesel">ディーゼル</option><option value="ev">電気自動車（EV）</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field" id="ccField"><label for="cc">排気量（cc）</label><input type="number" id="cc" min="0" value="1500"></div>
+      <div class="field" id="weightField"><label for="weight">車両重量（kg）</label><input type="number" id="weight" min="0" value="1200">
+        <div class="hint">車検証に書いてあります</div></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="reg">初度登録（年月）</label><input type="month" id="reg" value="2020-04">
+        <div class="hint">車検証の「初度登録年月」</div></div>
+      <div class="field"><label for="eco">重量税のエコカー減税</label>
+        <select id="eco"><option value="no">対象外（多くの車）</option><option value="yes">対象（本則税率）</option></select></div>
+    </div>
+    <h2>乗り方と費用</h2>
+    <div class="row">
+      <div class="field"><label for="km">年間の走行距離（km）</label><input type="number" id="km" min="0" value="8000"></div>
+      <div class="field"><label for="eff">燃費（km/L、EVはkm/kWh）</label><input type="number" id="eff" min="0" step="0.1" value="15"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="price">ガソリン代（円/L、EVは円/kWh）</label><input type="number" id="price" min="0" value="160">
+        <div class="hint">最近の給油の単価を入れてください</div></div>
+      <div class="field"><label for="ins">任意保険（年額）</label><input type="number" id="ins" min="0" value="60000">
+        <div class="hint">円単位。保険証券や更新案内で確認</div></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="park">駐車場代（月額）</label><input type="number" id="park" min="0" value="0">
+        <div class="hint">円単位。持ち家なら0</div></div>
+      <div class="field"><label for="maint">車検の整備費用（2年ごと）</label><input type="number" id="maint" min="0" value="50000">
+        <div class="hint">円単位。法定費用（税金・自賠責）は自動で計算します</div></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="other">メンテナンス費（年額）</label><input type="number" id="other" min="0" value="30000">
+        <div class="hint">オイル交換・タイヤ・洗車など</div></div>
+      <div class="field"><label for="loan">ローン返済（月額）</label><input type="number" id="loan" min="0" value="0"></div>
+    </div>
+    <button id="calc">維持費を計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>車の維持費のよくある質問</h2>
+    <h3>普通車と軽自動車の維持費の差は？</h3>
+    <p>いちばん差が出るのは税金です。自動車税は1,500ccの普通車で年30,500円（2019年10月以降の新車）、軽自動車は年10,800円です。重量税や自賠責、任意保険、燃費も含めると、年間で数万円の差になるのが一般的です。</p>
+    <h3>2026年に変わったことは？</h3>
+    <p>車を買うときにかかっていた「環境性能割」が2026年3月31日で廃止されました。また、自賠責保険料が2026年11月1日から値上げされ、自家用乗用車の24か月契約は17,650円から18,560円になります。</p>
+    <h3>13年を超えると税金が上がる？</h3>
+    <p>ガソリン車は新規登録から13年（ディーゼル車は11年）を超えると、自動車税が約15%、軽自動車税が約20%上がります。重量税も13年・18年で上がります。ハイブリッド車・電気自動車は、自動車税の重課の対象外です。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>自動車税・重量税は2026年10月時点の税額、自賠責保険料は損害保険料率算出機構の基準料率（24か月契約、離島以外）で計算しています。重量税のエコカー減税は車によって違うため、「対象」の場合は本則税率で計算しています。</footer>
+</div>
+
+<script src="assets/site.js"></script>
+<script src="assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+$("kind").addEventListener("change", () => { const kei = $("kind").value === "kei"; $("ccField").hidden = kei; $("weightField").hidden = kei; });
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const [ry, rm] = ($("reg").value || "2020-04").split("-").map(Number);
+  const kind = $("kind").value, fuel = $("fuel").value;
+  const now = new Date();
+  const fy = now.getMonth() >= 3 ? now.getFullYear() : now.getFullYear() - 1;
+  const age = yearsSince(ry, rm, fy);
+  const tax = annualCarTax({ kind, cc: num("cc"), regYear: ry, regMonth: rm, fuel }, fy);
+  const weight = weightTax2y(kind, num("weight"), age, $("eco").value === "yes") / 2;
+  const jibai = jibaiseki24(kind, now) / 2;
+  const shaken = (num("maint") + inspectionFee(kind, "shop")) / 2;
+  const fuelCost = num("eff") ? num("km") / num("eff") * num("price") : 0;
+  const items = [
+    ["自動車税・軽自動車税", tax.tax, "#b91c1c"], ["重量税（2年分を年に換算）", weight, "#ea580c"],
+    ["自賠責保険（年換算）", jibai, "#ca8a04"], ["任意保険", num("ins"), "#16a34a"],
+    [fuel === "ev" ? "電気代" : "ガソリン代", fuelCost, "#0891b2"], ["車検の整備・手数料（年換算）", shaken, "#2563eb"],
+    ["メンテナンス", num("other"), "#7c3aed"], ["駐車場", num("park") * 12, "#db2777"], ["ローン返済", num("loan") * 12, "#64748b"],
+  ].filter(i => i[1] > 0);
+  const total = items.reduce((s, i) => s + i[1], 0);
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat warn"><div class="k">年間の維持費</div><div class="v">${yen(total)}</div></div>
+      <div class="stat"><div class="k">月あたり</div><div class="v">${yen(total / 12)}</div></div>
+      <div class="stat"><div class="k">1kmあたり</div><div class="v">${num("km") ? yen(total / num("km")) : "—"}</div></div>
+    </div>
+    <div class="bar" aria-hidden="true">${items.map(i => `<span style="width:${i[1] / total * 100}%;background:${i[2]}"></span>`).join("")}</div>
+    <table class="info">
+      ${items.map(i => `<tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:${i[2]};margin-right:6px"></span>${i[0]}</td><td class="num">${yen(i[1])}</td><td class="num">${(i[1] / total * 100).toFixed(0)}%</td></tr>`).join("")}
+    </table>
+    <p class="note">自動車税は${tax.note}の税額（${yen(tax.tax)}）です。新規登録から約${age}年たっています${tax.note.includes("重課") ? "で、税金が上がる時期に入っています" : ""}。</p>
+    <p class="note">維持費を下げるなら、いちばん効果が大きいのは任意保険の見直しと、車そのものの見直しです。今の車がいくらで売れるかを知っておくと、乗り換えの判断がしやすくなります → <a href="/kuruma/norikae/">乗り換え 損得 計算</a></p>`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>

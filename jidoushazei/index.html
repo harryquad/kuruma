@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>自動車税・軽自動車税 計算ツール【2026年度】｜排気量別の税額・13年超の重課・月割の還付</title>
+<meta name="description" content="排気量・燃料・初度登録年月を入れるだけで、自動車税（種別割）・軽自動車税の年額を計算。13年超の重課がいつから始まるか、年の途中で買ったとき・廃車にしたときの月割の税額と還付額もわかる無料ツールです。">
+<link rel="canonical" href="https://harryquad.github.io/kuruma/jidoushazei/">
+<link rel="stylesheet" href="../assets/style.css">
+<style>tr.hv td{color:var(--warn)}</style>
+</head>
+<body>
+<header class="site-header"><div><a href="/kuruma/">車のお金 かんたん計算</a></div></header>
+<div class="wrap">
+  <h1>自動車税・軽自動車税 計算ツール（2026年度）</h1>
+  <p class="lead">排気量と初度登録年月から、<strong>自動車税（種別割）・軽自動車税の年額</strong>を計算します。<strong>13年超の重課</strong>がいつから始まるか、<strong>月割の税額・還付額</strong>もわかります。</p>
+
+  <div class="card">
+    <div class="row">
+      <div class="field"><label for="kind">車の種類</label>
+        <select id="kind"><option value="normal">普通車・小型車</option><option value="kei">軽自動車</option></select></div>
+      <div class="field"><label for="fuel">燃料</label>
+        <select id="fuel"><option value="gas">ガソリン</option><option value="hybrid">ハイブリッド</option><option value="diesel">ディーゼル</option><option value="ev">電気自動車（EV）</option></select></div>
+    </div>
+    <div class="row">
+      <div class="field" id="ccField"><label for="cc">排気量（cc）</label><input type="number" id="cc" min="0" value="1800"></div>
+      <div class="field"><label for="reg">初度登録（軽は初度検査）年月</label><input type="month" id="reg" value="2014-06"></div>
+    </div>
+    <div class="row">
+      <div class="field"><label for="event">月割の計算（任意）</label>
+        <select id="event"><option value="none">しない</option><option value="buy">年度の途中で買った（新規登録）</option><option value="scrap">年度の途中で廃車にした（抹消登録）</option></select></div>
+      <div class="field" id="evMonthField" hidden><label for="evMonth">その月</label><input type="month" id="evMonth"></div>
+    </div>
+    <button id="calc">計算する</button>
+  </div>
+
+  <div class="card" id="result" hidden></div>
+
+  <div class="ad">広告スペース</div>
+
+  <div class="card faq">
+    <h2>自動車税のよくある質問</h2>
+    <h3>自動車税はいつ払う？</h3>
+    <p>毎年4月1日時点の持ち主に、その年度（4月〜翌年3月）の1年分がかかり、5月に納付書が届きます。納期限は多くの都道府県で5月31日です。</p>
+    <h3>車を売ったら自動車税は戻ってくる？</h3>
+    <p>普通車は、廃車（抹消登録）にすると翌月から3月までの分が月割で戻ってきます。売却（名義変更）の場合は税金としては戻りませんが、買取店が未経過分を買取価格に上乗せするのが一般的です。軽自動車税には月割の還付はありません。</p>
+    <h3>13年超の重課を避けるには？</h3>
+    <p>重課は、新規登録から13年（ディーゼル車は11年）を過ぎた次の年度から始まります。乗り換えを考えているなら、重課が始まる年度の4月1日より前に手放すと、上がった税金を払わずに済みます。</p>
+  </div>
+
+  <div class="card" id="related"></div>
+
+  <footer>地方税法による2026年度の税額です（グリーン化特例による軽減は含みません）。月割の税額は100円未満を切り捨てています。</footer>
+</div>
+
+<script src="../assets/site.js"></script>
+<script src="../assets/calc.js"></script>
+<script>
+const $ = id => document.getElementById(id);
+$("kind").addEventListener("change", () => { $("ccField").hidden = $("kind").value === "kei"; });
+$("event").addEventListener("change", () => { $("evMonthField").hidden = $("event").value === "none"; });
+const t = new Date();
+$("evMonth").value = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, "0")}`;
+
+function calc() {
+  const out = $("result");
+  out.hidden = false;
+  const [ry, rm] = ($("reg").value || "").split("-").map(Number);
+  if (!ry) { out.innerHTML = '<p class="err">初度登録年月を入力してください。</p>'; return; }
+  const p = { kind: $("kind").value, cc: num("cc"), regYear: ry, regMonth: rm, fuel: $("fuel").value };
+  const fy = t.getMonth() >= 3 ? t.getFullYear() : t.getFullYear() - 1;
+  const now = annualCarTax(p, fy);
+  const years = [];
+  for (let y = fy; y < fy + 6; y++) years.push([y, annualCarTax(p, y)]);
+  const heavyFrom = years.find(([, x]) => x.note.includes("重課"));
+
+  let monthly = "";
+  const ev = $("event").value;
+  if (ev !== "none") {
+    const [ey, em] = ($("evMonth").value || "").split("-").map(Number);
+    const efy = em >= 4 ? ey : ey - 1;
+    const tx = annualCarTax(p, efy).tax;
+    const rest = em >= 4 ? 15 - em : 3 - em; // 翌月から3月までの月数
+    if (p.kind === "kei") monthly = `<p class="note">軽自動車税には月割の制度がありません。${ev === "buy" ? "年度の途中で買った場合、その年度の軽自動車税はかからず、翌年度から1年分かかります。" : "年度の途中で廃車にしても、その年度の軽自動車税は戻りません。"}</p>`;
+    else {
+      const amt = Math.floor(tx * rest / 12 / 100) * 100;
+      monthly = `<table class="info" style="margin-top:12px"><tr><td>${ev === "buy" ? "買った年度に払う自動車税（翌月から3月まで）" : "戻ってくる自動車税（翌月から3月まで）"}</td><td class="num">${yen(amt)}（${rest}か月分）</td></tr></table>`;
+    }
+  }
+
+  out.innerHTML = `
+    <div class="big">
+      <div class="stat warn"><div class="k">${fy}年度の税額</div><div class="v">${yen(now.tax)}</div></div>
+      <div class="stat"><div class="k">区分</div><div class="v" style="font-size:.95rem">${now.note}</div></div>
+      <div class="stat"><div class="k">重課が始まる年度</div><div class="v">${p.fuel === "hybrid" || p.fuel === "ev" ? "対象外" : heavyFrom ? (heavyFrom[0] === fy && now.note.includes("重課") ? "すでに重課" : heavyFrom[0] + "年度") : `${fy + 6}年度以降`}</div></div>
+    </div>
+    <table class="info">
+      <tr><th>年度</th><th class="num">税額</th><th>区分</th></tr>
+      ${years.map(([y, x]) => `<tr class="${x.note.includes("重課") ? "hv" : ""}"><td>${y}年度</td><td class="num">${yen(x.tax)}</td><td>${x.note}</td></tr>`).join("")}
+    </table>
+    ${monthly}
+    ${heavyFrom && !now.note.includes("重課") ? `<p class="note">${heavyFrom[0]}年4月1日より前に手放すと、重課された税金を払わずに済みます。今の車がいくらで売れるかは、一括査定で複数の買取店の価格を比べると確認できます → <a href="/kuruma/norikae/">乗り換え 損得 計算</a></p>` : ""}`;
+  out.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+$("calc").addEventListener("click", calc);
+</script>
+</body>
+</html>
